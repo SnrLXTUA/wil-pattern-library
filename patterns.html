@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Elizabeth Georgiades">
+    <meta name="copyright" content="Copyright 2025 Elizabeth Georgiades">
+    <meta name="license" content="CC BY-NC-ND 4.0">
+    <title>Pattern Library - WIL Pattern Library</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="index.html" style="color: inherit;">WIL Pattern Library</a></h1>
+            <p class="subtitle">Innovation Studio</p>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="identities.html">Identities</a>
+                <a href="patterns.html" class="active">Patterns</a>
+                <a href="quiz.html">Quiz</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Pattern Library</h2>
+            <p class="lead">Explore assessment patterns for your WIL experience. Click any pattern to see details and personalized guidance.</p>
+        </section>
+
+        <!-- Filters -->
+        <section class="filters-section">
+            <div class="filter-group">
+                <h4>Categories</h4>
+                <div class="filter-buttons" id="category-filters">
+                    <button class="filter-btn active" data-filter="all">All Categories</button>
+                    <!-- Category buttons will be added by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="filter-group">
+                <h4>Filter by tags:</h4>
+                <div class="filter-buttons" id="tag-filters">
+                    <!-- Tag buttons will be added by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Pattern Grid -->
+        <section id="pattern-grid" class="pattern-grid">
+            <!-- Pattern cards will be loaded here by JavaScript -->
+        </section>
+
+        <!-- No Results Message -->
+        <div id="no-results" class="text-center hidden" style="padding: var(--space-3xl);">
+            <p style="color: var(--text-secondary); font-size: 1.125rem;">No patterns match your filters. Try selecting different options.</p>
+        </div>
+    </main>
+
+    <!-- Pattern Modal -->
+    <div id="pattern-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div id="modal-body">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin: 0;">
+                <span>© Elizabeth Georgiades 2025</span>
+                <span>Site licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license" style="color: inherit;">CC BY-NC-ND 4.0</a></span>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script>
+        // Filter State
+        let activeCategory = 'all';
+        let activeTags = new Set();
+        
+        // Initialize category filters
+        function initCategoryFilters() {
+            const container = document.getElementById('category-filters');
+            
+            categories.forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                btn.textContent = category;
+                btn.dataset.filter = category.toLowerCase();
+                
+                btn.addEventListener('click', () => {
+                    // Update active category
+                    activeCategory = btn.dataset.filter;
+                    
+                    // Update button states
+                    container.querySelectorAll('.filter-btn').forEach(b => {
+                        b.classList.remove('active');
+                    });
+                    btn.classList.add('active');
+                    
+                    // Refilter patterns
+                    filterPatterns();
+                });
+                
+                container.appendChild(btn);
+            });
+        }
+        
+        // Initialize tag filters
+        function initTagFilters() {
+            const container = document.getElementById('tag-filters');
+            
+            allTags.forEach(tag => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn tag-filter';
+                btn.textContent = tag;
+                btn.dataset.tag = tag;
+                
+                btn.addEventListener('click', () => {
+                    // Toggle tag selection
+                    if (activeTags.has(tag)) {
+                        activeTags.delete(tag);
+                        btn.classList.remove('active');
+                    } else {
+                        activeTags.add(tag);
+                        btn.classList.add('active');
+                    }
+                    
+                    // Refilter patterns
+                    filterPatterns();
+                });
+                
+                container.appendChild(btn);
+            });
+        }
+        
+        // Load all patterns
+        function loadPatterns() {
+            const grid = document.getElementById('pattern-grid');
+            grid.innerHTML = '';
+            
+            patterns.forEach(pattern => {
+                const card = createPatternCard(pattern);
+                grid.appendChild(card);
+            });
+        }
+        
+        // Create a pattern card element
+        function createPatternCard(pattern) {
+            const card = document.createElement('div');
+            card.className = 'pattern-card';
+            card.dataset.category = pattern.category.toLowerCase();
+            card.dataset.tags = pattern.tags.join(',');
+            
+            card.innerHTML = `
+                <div class="pattern-header">
+                    <h3>${pattern.name}</h3>
+                    <span class="complexity-badge complexity-${pattern.complexity}">${pattern.complexity}</span>
+                </div>
+                <span class="category-badge category-${pattern.category.toLowerCase()}">${pattern.category}</span>
+                <p class="pattern-description">${pattern.description}</p>
+                <div class="pattern-tags">
+                    ${pattern.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                </div>
+            `;
+            
+            card.addEventListener('click', () => openPatternModal(pattern));
+            
+            return card;
+        }
+        
+        // Filter patterns based on active filters
+        function filterPatterns() {
+            const cards = document.querySelectorAll('.pattern-card');
+            let visibleCount = 0;
+            
+            cards.forEach(card => {
+                let show = true;
+                
+                // Filter by category
+                if (activeCategory !== 'all') {
+                    if (card.dataset.category !== activeCategory) {
+                        show = false;
+                    }
+                }
+                
+                // Filter by tags (must have ALL selected tags)
+                if (activeTags.size > 0) {
+                    const cardTags = card.dataset.tags.split(',');
+                    const hasAllTags = Array.from(activeTags).every(tag => cardTags.includes(tag));
+                    if (!hasAllTags) {
+                        show = false;
+                    }
+                }
+                
+                // Show/hide card
+                if (show) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            // Show/hide no results message
+            const noResults = document.getElementById('no-results');
+            if (visibleCount === 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+            }
+        }
+        
+        // Open pattern modal
+        function openPatternModal(pattern) {
+            const modal = document.getElementById('pattern-modal');
+            const modalBody = document.getElementById('modal-body');
+            
+            // Get identity names that recommend this pattern
+            const recommendingIdentities = identities
+                .filter(id => id.recommendedPatterns.includes(pattern.id))
+                .map(id => id.name);
+            
+            modalBody.innerHTML = `
+                <div class="modal-header">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-md);">
+                        <h2>${pattern.name}</h2>
+                        <span class="complexity-badge complexity-${pattern.complexity}">${pattern.complexity}</span>
+                    </div>
+                    <span class="category-badge category-${pattern.category.toLowerCase()}">${pattern.category}</span>
+                </div>
+                
+                <div class="modal-body">
+                    <p style="font-size: 1.125rem; margin-bottom: var(--space-xl);">${pattern.fullDescription}</p>
+                    
+                    <div style="margin-bottom: var(--space-lg);">
+                        <h4 style="margin-bottom: var(--space-sm);">Skills Developed:</h4>
+                        <div style="display: flex; flex-wrap: wrap; gap: var(--space-sm);">
+                            ${pattern.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                        </div>
+                    </div>
+                    
+                    ${recommendingIdentities.length > 0 ? `
+                        <div style="margin-bottom: var(--space-lg);">
+                            <h4 style="margin-bottom: var(--space-sm);">Good for:</h4>
+                            <p style="color: var(--text-secondary);">${recommendingIdentities.join(', ')}</p>
+                        </div>
+                    ` : ''}
+                    
+                    <div style="margin-bottom: var(--space-lg);">
+                        <h4 style="margin-bottom: var(--space-sm);">Related Tags:</h4>
+                        <div class="pattern-tags">
+                            ${pattern.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    
+                    <p style="background: var(--bg-tertiary); padding: var(--space-md); border-radius: var(--radius-md); font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--space-lg);">
+                        <strong>Innovation Studio Context:</strong> This tool is part of the assessment design for Innovation Studio 1 and 2. It supports identity formation, reflective practice, and self-authored WIL experiences by helping students select artefacts that match who they are becoming as professionals.
+                    </p>
+                </div>
+                
+                <div class="modal-footer">
+                    <a href="${pattern.adobeExpressLink}" target="_blank" class="btn btn-primary" ${pattern.adobeExpressLink === '#' ? 'onclick="alert(\'Adobe Express template coming soon!\'); return false;"' : ''}>
+                        Create with Adobe Express
+                    </a>
+                    <button onclick="closeModal()" class="btn btn-secondary">Close</button>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('pattern-modal');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('pattern-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'pattern-modal') {
+                closeModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initCategoryFilters();
+            initTagFilters();
+            loadPatterns();
+            
+            // Check if there's a pattern ID in the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const patternId = urlParams.get('pattern');
+            if (patternId) {
+                const pattern = patterns.find(p => p.id === patternId);
+                if (pattern) {
+                    setTimeout(() => openPatternModal(pattern), 300);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

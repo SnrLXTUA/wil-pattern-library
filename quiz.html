@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Elizabeth Georgiades">
+    <meta name="copyright" content="Copyright 2025 Elizabeth Georgiades">
+    <meta name="license" content="CC BY-NC-ND 4.0">
+    <title>Pattern Picker Quiz - WIL Pattern Library</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="index.html" style="color: inherit;">WIL Pattern Library</a></h1>
+            <p class="subtitle">Innovation Studio</p>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="identities.html">Identities</a>
+                <a href="patterns.html">Patterns</a>
+                <a href="quiz.html" class="active">Quiz</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="quiz-container">
+            <section class="hero">
+                <h2>Pattern Picker Quiz</h2>
+                <p class="lead">Answer a few questions to get personalized pattern recommendations based on your professional identity and growth goals.</p>
+            </section>
+
+            <!-- Step 1: Identify Your Approach -->
+            <div id="step1" class="quiz-card">
+                <h3>Step 1: Identify Your Approach</h3>
+                <p class="quiz-question">Which description feels most like you?</p>
+                
+                <div class="quiz-options" id="identity-options">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <div class="quiz-navigation mt-xl">
+                    <a href="index.html" class="btn btn-outline">Cancel</a>
+                    <button id="next-to-step2" class="btn btn-primary" disabled>Next</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Select Skills (Hidden initially) -->
+            <div id="step2" class="quiz-card hidden">
+                <h3>Step 2: Select Skills to Develop</h3>
+                <p class="quiz-question">Which skills do you want to focus on growing during your WIL experience? (Select 2-4)</p>
+                
+                <div id="identity-display" class="identity-result mb-lg">
+                    <h4>Your Identity: <span id="selected-identity-name"></span></h4>
+                </div>
+                
+                <div class="quiz-options" id="skill-options">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <div class="quiz-navigation mt-xl">
+                    <button id="back-to-step1" class="btn btn-outline">Back</button>
+                    <button id="see-recommendations" class="btn btn-primary" disabled>See Recommendations</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin: 0;">
+                <span>© Elizabeth Georgiades 2025</span>
+                <span>Site licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license" style="color: inherit;">CC BY-NC-ND 4.0</a></span>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script>
+        // Quiz State
+        let selectedIdentity = null;
+        let selectedSkills = [];
+        
+        // Initialize Step 1: Load identity options
+        function initStep1() {
+            const container = document.getElementById('identity-options');
+            
+            identities.forEach((identity, index) => {
+                const option = document.createElement('label');
+                option.className = 'quiz-option';
+                option.innerHTML = `
+                    <input type="radio" name="identity" value="${identity.id}">
+                    <span>${identity.quizAnswer}</span>
+                `;
+                
+                const radio = option.querySelector('input');
+                radio.addEventListener('change', () => {
+                    // Remove selected class from all options
+                    document.querySelectorAll('#identity-options .quiz-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    
+                    // Add selected class to this option
+                    option.classList.add('selected');
+                    
+                    // Store selection
+                    selectedIdentity = identity.id;
+                    
+                    // Enable next button
+                    document.getElementById('next-to-step2').disabled = false;
+                });
+                
+                container.appendChild(option);
+            });
+        }
+        
+        // Initialize Step 2: Load skill options
+        function initStep2() {
+            const container = document.getElementById('skill-options');
+            
+            skillCategories.forEach(skill => {
+                const option = document.createElement('label');
+                option.className = 'quiz-option';
+                option.innerHTML = `
+                    <input type="checkbox" name="skills" value="${skill}">
+                    <span>${skill}</span>
+                `;
+                
+                const checkbox = option.querySelector('input');
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        if (selectedSkills.length < 4) {
+                            option.classList.add('selected');
+                            selectedSkills.push(skill);
+                        } else {
+                            e.target.checked = false;
+                            alert('Please select no more than 4 skills.');
+                        }
+                    } else {
+                        option.classList.remove('selected');
+                        selectedSkills = selectedSkills.filter(s => s !== skill);
+                    }
+                    
+                    // Enable/disable button based on selection (2-4 skills)
+                    const btn = document.getElementById('see-recommendations');
+                    btn.disabled = selectedSkills.length < 2 || selectedSkills.length > 4;
+                });
+                
+                container.appendChild(option);
+            });
+        }
+        
+        // Navigation: Step 1 -> Step 2
+        document.getElementById('next-to-step2').addEventListener('click', () => {
+            // Hide step 1, show step 2
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            
+            // Display selected identity
+            const identity = identities.find(i => i.id === selectedIdentity);
+            document.getElementById('selected-identity-name').textContent = identity.name;
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        // Navigation: Step 2 -> Step 1
+        document.getElementById('back-to-step1').addEventListener('click', () => {
+            // Show step 1, hide step 2
+            document.getElementById('step1').classList.remove('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            
+            // Reset skill selections
+            selectedSkills = [];
+            document.querySelectorAll('#skill-options .quiz-option').forEach(opt => {
+                opt.classList.remove('selected');
+                opt.querySelector('input').checked = false;
+            });
+            document.getElementById('see-recommendations').disabled = true;
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        // Submit and go to results
+        document.getElementById('see-recommendations').addEventListener('click', () => {
+            // Store results in session storage
+            sessionStorage.setItem('quizIdentity', selectedIdentity);
+            sessionStorage.setItem('quizSkills', JSON.stringify(selectedSkills));
+            
+            // Navigate to results page
+            window.location.href = 'results.html';
+        });
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initStep1();
+            initStep2();
+        });
+    </script>
+</body>
+</html>

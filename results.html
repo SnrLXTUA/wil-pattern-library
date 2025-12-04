@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Elizabeth Georgiades">
+    <meta name="copyright" content="Copyright 2025 Elizabeth Georgiades">
+    <meta name="license" content="CC BY-NC-ND 4.0">
+    <title>Your Recommendations - WIL Pattern Library</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="index.html" style="color: inherit;">WIL Pattern Library</a></h1>
+            <p class="subtitle">Innovation Studio</p>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="identities.html">Identities</a>
+                <a href="patterns.html">Patterns</a>
+                <a href="quiz.html">Quiz</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="results-header">
+            <h2>Your Recommended Patterns</h2>
+            <p class="lead">Based on your identity and skill focus, these patterns are the best match for you.</p>
+        </section>
+
+        <!-- Results Summary -->
+        <section class="results-summary">
+            <div class="result-item">
+                <div class="result-label">Your Identity:</div>
+                <div class="result-value" id="identity-name"></div>
+            </div>
+            
+            <div class="result-item">
+                <div class="result-label">Focus Skills:</div>
+                <div class="result-chips" id="selected-skills">
+                    <!-- Skills will be loaded here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommended Patterns List -->
+        <section>
+            <h3 class="mb-lg">Recommended Patterns</h3>
+            <ul id="patterns-list" class="pattern-list">
+                <!-- Pattern recommendations will be loaded here -->
+            </ul>
+        </section>
+
+        <!-- Actions -->
+        <section style="text-align: center; margin-top: var(--space-3xl);">
+            <a href="patterns.html" class="btn btn-primary">Browse All Patterns</a>
+            <a href="quiz.html" class="btn btn-secondary">Retake Quiz</a>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin: 0;">
+                <span>© Elizabeth Georgiades 2025</span>
+                <span>Site licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license" style="color: inherit;">CC BY-NC-ND 4.0</a></span>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script>
+        // Load results from session storage
+        function loadResults() {
+            const identityId = sessionStorage.getItem('quizIdentity');
+            const skills = JSON.parse(sessionStorage.getItem('quizSkills') || '[]');
+            
+            // If no results, redirect to quiz
+            if (!identityId || skills.length === 0) {
+                window.location.href = 'quiz.html';
+                return;
+            }
+            
+            // Find the identity
+            const identity = identities.find(i => i.id === identityId);
+            if (!identity) {
+                window.location.href = 'quiz.html';
+                return;
+            }
+            
+            // Display identity
+            document.getElementById('identity-name').textContent = identity.name;
+            
+            // Display skills
+            const skillsContainer = document.getElementById('selected-skills');
+            skills.forEach(skill => {
+                const chip = document.createElement('span');
+                chip.className = 'result-chip';
+                chip.textContent = skill;
+                skillsContainer.appendChild(chip);
+            });
+            
+            // Get recommended patterns
+            const recommendedPatterns = getRecommendedPatterns(identity, skills);
+            
+            // Display patterns
+            displayPatterns(recommendedPatterns);
+        }
+        
+        // Get recommended patterns based on identity and skills
+        function getRecommendedPatterns(identity, selectedSkills) {
+            // Get patterns recommended for this identity
+            const identityPatterns = identity.recommendedPatterns
+                .map(patternId => patterns.find(p => p.id === patternId))
+                .filter(p => p); // Remove any null values
+            
+            // Score each pattern based on skill match
+            const scoredPatterns = identityPatterns.map(pattern => {
+                let score = 10; // Base score for being identity-recommended
+                
+                // Add points for each matching skill
+                selectedSkills.forEach(skill => {
+                    if (pattern.skills.includes(skill)) {
+                        score += 5;
+                    }
+                });
+                
+                // Add points for matching tags related to skills
+                const skillTagMap = {
+                    'Reflection & Self-Awareness': ['introspective', 'metacognition', 'personal'],
+                    'Collaboration & Facilitation': ['collaborative', 'social', 'peer-feedback', 'community'],
+                    'Innovation & Experimentation': ['innovation', 'experimentation', 'prototyping', 'iteration'],
+                    'Employability & Professional Skills': ['employability', 'career-ready', 'skills', 'career-exploration'],
+                    'Communication & Storytelling': ['stories', 'interviews', 'networking'],
+                    'Analysis & Critical Thinking': ['analytical', 'critical-thinking', 'analysis', 'systems-thinking']
+                };
+                
+                selectedSkills.forEach(skill => {
+                    const relatedTags = skillTagMap[skill] || [];
+                    relatedTags.forEach(tag => {
+                        if (pattern.tags.includes(tag)) {
+                            score += 2;
+                        }
+                    });
+                });
+                
+                return {
+                    pattern,
+                    score
+                };
+            });
+            
+            // Sort by score (highest first)
+            scoredPatterns.sort((a, b) => b.score - a.score);
+            
+            // Return top 4 patterns
+            return scoredPatterns.slice(0, 4).map(sp => sp.pattern);
+        }
+        
+        // Display patterns in the list
+        function displayPatterns(recommendedPatterns) {
+            const listContainer = document.getElementById('patterns-list');
+            
+            recommendedPatterns.forEach((pattern, index) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'pattern-list-item';
+                
+                listItem.innerHTML = `
+                    <div class="pattern-list-header">
+                        <div class="pattern-number">${index + 1}</div>
+                        <div class="pattern-list-title">
+                            <h3>${pattern.name}</h3>
+                            <span class="category-badge category-${pattern.category.toLowerCase()}">${pattern.category}</span>
+                        </div>
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); margin-bottom: var(--space-md);">${pattern.fullDescription}</p>
+                    
+                    <div class="pattern-skills">
+                        <strong style="font-size: 0.875rem; color: var(--text-secondary); margin-right: var(--space-sm);">Skills:</strong>
+                        ${pattern.tags.map(tag => `<span class="skill-tag">${tag}</span>`).join('')}
+                    </div>
+                    
+                    <div style="margin-top: var(--space-lg);">
+                        <a href="${pattern.adobeExpressLink}" target="_blank" class="btn btn-primary" ${pattern.adobeExpressLink === '#' ? 'onclick="alert(\'Adobe Express template coming soon!\'); return false;"' : ''}>
+                            Create This Artefact
+                        </a>
+                        <a href="patterns.html?pattern=${pattern.id}" class="btn btn-outline">View Details</a>
+                    </div>
+                `;
+                
+                listContainer.appendChild(listItem);
+            });
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', loadResults);
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Elizabeth Georgiades">
+    <meta name="copyright" content="Copyright 2025 Elizabeth Georgiades">
+    <meta name="license" content="CC BY-NC-ND 4.0">
+    <title>Identity Cards - WIL Pattern Library</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="index.html" style="color: inherit;">WIL Pattern Library</a></h1>
+            <p class="subtitle">Innovation Studio</p>
+            <nav>
+                <a href="index.html">Home</a>
+                <a href="identities.html" class="active">Identities</a>
+                <a href="patterns.html">Patterns</a>
+                <a href="quiz.html">Quiz</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Identity Card Library</h2>
+            <p class="lead">Discover professional identity archetypes that shape how you approach work and learning. Each identity comes with strengths, challenges, and recommended patterns that match your natural working style.</p>
+        </section>
+
+        <section class="info-section mb-xl">
+            <h3>Finding Your Identity</h3>
+            <p>These identities aren't fixed labels—they're lenses for understanding your professional approach. You might recognize yourself in multiple identities, or find you're developing from one toward another. Use these as tools for self-awareness and intentional growth.</p>
+            
+            <div style="text-align: center; margin-top: var(--space-xl);">
+                <a href="quiz.html" class="btn btn-primary">Take the Quiz to Find Your Identity</a>
+            </div>
+        </section>
+
+        <section id="identities-container" class="identity-grid">
+            <!-- Identity cards will be loaded here by JavaScript -->
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin: 0;">
+                <span>© Elizabeth Georgiades 2025</span>
+                <span>Site licensed under <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license" style="color: inherit;">CC BY-NC-ND 4.0</a></span>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/data.js"></script>
+    <script>
+        // Load and display all identity cards with accordion functionality
+        function loadIdentities() {
+            const container = document.getElementById('identities-container');
+            
+            identities.forEach((identity, index) => {
+                const card = document.createElement('div');
+                card.className = 'identity-card';
+                card.id = identity.id;
+                card.dataset.index = index;
+                
+                const recommendedPatternsList = identity.recommendedPatterns
+                    .map(patternId => {
+                        const pattern = patterns.find(p => p.id === patternId);
+                        return pattern ? `
+                            <a href="patterns.html?pattern=${pattern.id}" class="pattern-link">
+                                <span>${pattern.name}</span>
+                                <span class="category-badge category-${pattern.category.toLowerCase()}">${pattern.category}</span>
+                            </a>
+                        ` : '';
+                    })
+                    .join('');
+                
+                card.innerHTML = `
+                    <div class="identity-header" onclick="toggleIdentity(${index})">
+                        <h3>${identity.name}</h3>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <p class="identity-narrative">${identity.narrative}</p>
+                    
+                    <div class="identity-content" style="display: none;">
+                        <div class="identity-section">
+                            <h4>Key Strengths</h4>
+                            <ul>
+                                ${identity.strengths.map(s => `<li>${s}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="identity-section">
+                            <h4>Growth Edges & Challenges</h4>
+                            <ul>
+                                ${identity.growthEdges.map(g => `<li>${g}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="identity-section">
+                            <h4>Preferred Ways of Working</h4>
+                            <ul>
+                                ${identity.preferredWays.map(w => `<li>${w}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="recommended-patterns">
+                            <h4>Recommended Patterns for Your Identity</h4>
+                            <div class="pattern-links">
+                                ${recommendedPatternsList}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        // Toggle accordion - only one open at a time
+        function toggleIdentity(index) {
+            const allCards = document.querySelectorAll('.identity-card');
+            const clickedCard = allCards[index];
+            const clickedContent = clickedCard.querySelector('.identity-content');
+            const clickedIcon = clickedCard.querySelector('.expand-icon');
+            const isOpen = clickedContent.style.display === 'block';
+            
+            // Close all cards
+            allCards.forEach(card => {
+                const content = card.querySelector('.identity-content');
+                const icon = card.querySelector('.expand-icon');
+                content.style.display = 'none';
+                icon.style.transform = 'rotate(0deg)';
+                card.classList.remove('expanded');
+            });
+            
+            // If the clicked card was closed, open it
+            if (!isOpen) {
+                clickedContent.style.display = 'block';
+                clickedIcon.style.transform = 'rotate(180deg)';
+                clickedCard.classList.add('expanded');
+                
+                // Smooth scroll to card
+                setTimeout(() => {
+                    clickedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
+        }
+        
+        // Load identities when page loads
+        document.addEventListener('DOMContentLoaded', loadIdentities);
+        
+        // Check if there's a hash in the URL to scroll to and open specific identity
+        window.addEventListener('load', () => {
+            if (window.location.hash) {
+                const element = document.querySelector(window.location.hash);
+                if (element) {
+                    const index = parseInt(element.dataset.index);
+                    setTimeout(() => {
+                        toggleIdentity(index);
+                    }, 300);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
